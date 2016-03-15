@@ -1,6 +1,6 @@
 lazy val root = (project in file(".")).
     settings(
-        name := "ar-model-consine-similarity",
+        name := "row-consine-similarity",
         version := "1.0",
         scalaVersion := "2.10.4",
         mainClass in Compile := Some("org.venraas.spark.CosineSim")
@@ -13,10 +13,10 @@ libraryDependencies ++= Seq(
 )
 
 // META-INF discarding
-//mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
-//    {
-//        case PathList("META-INF", xs @ _*) => MergeStrategy.discard
-//        case x => MergeStrategy.first
-//    }
-//}
+assemblyMergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
+    {
+        case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+        case x => MergeStrategy.first
+    }
+}
 
