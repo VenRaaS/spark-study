@@ -52,44 +52,38 @@ object CosineSim {
 
         val sc = new SparkContext(conf)
 
+	//-- input data with form as
+        //   ($uid, $category_code, $value)
 //        val txt = sc.textFile("hdfs://itrihd34:8020/tmp/user_p3category_preferences/*")
         val txt = sc.textFile(params.input)
 
+        //-- ($category_code, ($uid, $value))
 	val inData = txt.map(l => { 
 		var ary = l.trim.split(',');
 		(ary(1), (ary(0), ary(2)));
 	})
 
-
 	//-- mapping table of category_code 2 index 
-        var cateCodes = inData.map(t => t._1).distinct().collect()
-        var cat2idx:Array[Tuple2[String, String]] = new Array[Tuple2[String, String]](cateCodes.length)
-	for (i <-0 to (cateCodes.length - 1)) {		
-		cat2idx(i) = new Tuple2(cateCodes(i), i.toString )
-	} 
-//	cat2idx.foreach { println; }
+        //   i.e. ($category_code, $index)
+        var cat2idx = inData.map(t => t._1).distinct().zipWithIndex()
+//	cat2idx.take(100).foreach { println; }
 	
 	//-- re-mapping feature index and forms as 
 	//   ($uid, ($feaIdx, $faaVal))
-	var cat2idx_rdd:RDD[Tuple2[String, String]] = sc.parallelize(cat2idx)
-	var inData_reIdx = inData.join(cat2idx_rdd).map( t => (t._2._1._1, (t._2._2.toInt, t._2._1._2.toDouble)) )
-//	inData_reIdx.take(1000).foreach{ println; }
+	var u2feaIdxVal = inData.join(cat2idx).map( t => (t._2._1._1, (t._2._2.toInt, t._2._1._2.toDouble)) )
+//	u2feaIdxVal.take(1000).foreach{ println; }
 
 	//-- user category_code feature vector, 
 	//   i.e. ($uid, [($feaIdx, $faaVal)] )
-	var u2vct = inData_reIdx.groupByKey().map(t => { (t._1, Vectors.sparse(cateCodes.length, t._2.toSeq)) })
-//	u2vct.take(1000).foreach { println; }
+	var num_cats = cat2idx.collect().length
+	var u2vct = u2feaIdxVal.groupByKey().map(t => { (t._1, Vectors.sparse(num_cats, t._2.toSeq)) })
+//	u2vct.take(1000).foreach{ println; }
 
-	val uids = txt.map(l => { l.trim.split(',')(0) }).distinct().collect()
-	var u2idx:Array[Tuple2[String, String]] = new Array[Tuple2[String, String]] (uids.length)
-	for (i <-0 to (uids.length -1)) {
-		u2idx(i) = new Tuple2(uids(i), i.toString)
-	}
-//	u2idx.take(100).foreach { println; }
+	val u2idx = txt.map(l => { l.trim.split(',')(0) }).distinct().zipWithIndex()
+//	u2idx.take(100).foreach{ println; }
 
-	val u2idx_rdd:RDD[Tuple2[String, String] ] = sc.parallelize(u2idx)
-	val rows = u2idx_rdd.join(u2vct).map( t => new IndexedRow(t._2._1.toLong, t._2._2) )
-//	rows.take(1000).foreach{ println; }
+	val rows = u2idx.join(u2vct).map( t => new IndexedRow(t._2._1.toLong, t._2._2) )
+//	rows.take(100).foreach{ println; }
 
 	val mat:IndexedRowMatrix = new IndexedRowMatrix(rows)
 //	println(mat.numCols())
