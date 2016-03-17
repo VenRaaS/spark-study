@@ -81,6 +81,7 @@ object CosineSim {
 
 	//-- mapping table of uid 2 index
 	val u2idx = txt.map(l => { l.trim.split(',')(0) }).distinct().zipWithIndex()
+	
 //	u2idx.take(100).foreach{ println; }
 	val rows = u2idx.join(u2vct).map( t => new IndexedRow(t._2._1.toLong, t._2._2) )
 //	rows.take(100).foreach{ println; }
@@ -89,7 +90,7 @@ object CosineSim {
 //	println(mat.numCols())
 //	println(mat.numRows())
 
-	//-- calc Cosine Similarities
+	//-- calc row Cosine Similarities
 	val exact = mat.toCoordinateMatrix().transpose().toRowMatrix().columnSimilarities()
 	exact.toRowMatrix().rows.take(100).foreach{ println; }
 
