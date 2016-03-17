@@ -73,7 +73,7 @@ object CosineSim {
 	var u2feaIdxVal = inData.join(cat2idx).map( t => (t._2._1._1, (t._2._2.toInt, t._2._1._2.toDouble)) )
 //	u2feaIdxVal.take(1000).foreach{ println; }
 
-	//-- user category_code feature vector, 
+	//-- user vector with category_codes, 
 	//   i.e. ($uid, [($feaIdx, $faaVal)] )
 	var num_cats = cat2idx.collect().length
 	var u2vct = u2feaIdxVal.groupByKey().map(t => { (t._1, Vectors.sparse(num_cats, t._2.toSeq)) })
@@ -81,7 +81,6 @@ object CosineSim {
 
 	val u2idx = txt.map(l => { l.trim.split(',')(0) }).distinct().zipWithIndex()
 //	u2idx.take(100).foreach{ println; }
-
 	val rows = u2idx.join(u2vct).map( t => new IndexedRow(t._2._1.toLong, t._2._2) )
 //	rows.take(100).foreach{ println; }
 
